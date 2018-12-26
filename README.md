@@ -21,6 +21,14 @@ router.addRoute('/about', function() {
 })
 ```
 
+### Initializing the router
+For the router to work, it's necessary to run the next script:
+```javascript
+router.start();
+```
+Be sure to add it after the definition of the routes.
+Without it, the router will be able to detect the hash changes and show the new URL, but it won't load the initial URL the web is open from.
+
 ### Navigating through the routes
 Add a # symbol before your routes in your HTML links.
 ```html
@@ -34,5 +42,4 @@ Use Babel to transpile your code and make sure that it works with every browser.
 These features are planned to be added in the future.
 1. Parameters in the URL compatibility.
 2. Singleton pattern.
-3. Default route.
-4. Complex routes handling.
+3. Complex routes handling.

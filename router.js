@@ -6,9 +6,13 @@ class Router {
 
     /**
      * @param {String} el - The DOM element using the querySelector form
-     * @param {Function} emptyRouteCallback - A callback function for the undefined routes
+     * @param {Function} rootRouteCallback - A callback function for the root route
+     * @param {Function} emptyRouteCallback - (Optional) A callback function for the undefined routes
      */
-    constructor( el, emptyRouteCallback ) {
+    constructor( el, rootRouteCallback, emptyRouteCallback ) {
+
+        // Initializing the routes array
+        this.routes = [];
 
         // Checking that the el element has been set
         if( !!el !== false ) {
@@ -16,18 +20,64 @@ class Router {
         } else {
             throw new Error("Router needs a DOM entry point.");
         }
-        
-        this.routes = [];
 
+        // Checking that the el element has been set
+        if( !!rootRouteCallback !== false ) {
+            this.rootRouteCallback = rootRouteCallback;
+        } else {
+            throw new Error("Router needs a callback function for the root route.");
+        }
+
+        // Defining a default behaviour for an empty route, and changing it in case of getting it as parameter
         this.emptyRouteCallback = emptyRouteCallback !== undefined ? emptyRouteCallback : () => {
             return "The current route doesn't exist";
         };
+
+        // Starting the on has change event handler
         window.onhashchange = this.hashChanged.bind(this);
+
+    }
+
+    /**
+     * Reads the URL when the class is loaded and renders the HTML
+     */
+    start() {
+
+        const htmlOutput = this.getHTML( document.baseURI );
+
+        this.render( htmlOutput );
+
+    }
+
+    /**
+     * Tries to find a URL, and returns its HTML or the not found HTML
+     * @param {String} url - The location pathname
+     * 
+     * @return {String} - The HTML
+     */
+    getHTML( url ) {
+
+        let htmlOutput = null;
+
+        const baseURL = window.location.protocol + '//' + window.location.hostname + (location.port ? ':'+location.port: '') + '/';
+
+        if( url === baseURL ) {
+            htmlOutput = this.rootRouteCallback();
+        } else if( this.hashURL( url ) !== null
+            && this.routes[ this.hashURL( url ) ] !== undefined ) {
+                
+            htmlOutput = this.routes[this.hashURL( url )]();
+        } else {
+            htmlOutput = this.emptyRouteCallback();
+        }
+
+        return htmlOutput;
+
     }
 
     /**
      * It adds a new valid route
-     * @param {string} route - The route to be created, prefix must be /
+     * @param {String} route - The route to be created, prefix must be /
      * @param {Class} callback to be fired when the route is reached
      */
     addRoute( route, callback ) {
@@ -56,19 +106,10 @@ class Router {
      * @param {Object} context 
      */
     hashChanged( context ) {
+
         const newURL = context.newURL;
-        let htmlOutput;
 
-        // Executing the controller
-        if( this.hashURL( newURL ) !== null
-            && this.routes[ this.hashURL( newURL ) ] !== undefined ) {
-                
-            htmlOutput = this.routes[this.hashURL( newURL )]();
-        } else {
-            htmlOutput = this.emptyRouteCallback();
-        }
-
-        this.render( htmlOutput );
+        this.render( this.getHTML( newURL ) );
         
     }
 
@@ -93,13 +134,10 @@ class Router {
      */
     hashURL( url ) {
 
-        const baseURL = document.baseURI + '#/',
-            hashStart = url.indexOf( '#/' ) + 1;
-        
-        if( hashStart !== -1 ) {
-            const cleanURL = url.substr( hashStart, url.length - hashStart );
+        const hashStart = url.indexOf( '#/' ) + 1;
 
-            return cleanURL;
+        if( hashStart !== 0 ) {
+            return url.substr( hashStart, url.length - hashStart );
         }
 
         return null;
@@ -108,3 +146,4 @@ class Router {
 
 }
 
+export default Router;
